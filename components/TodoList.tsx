@@ -6,6 +6,9 @@ import TrashCanIcon from "../public/statics/svg/trash_can.svg";
 import CheckMarkIcon from "../public/statics/svg/check_mark.svg";
 import { checkTodoAPI, deleteTodoAPI } from "../lib/api/todo";
 import { useRouter } from "next/router";
+import { useSelector, useDispatch } from "react-redux";
+import { RootState } from "../store";
+import { todoActions } from "../store/todo";
 
 const Container = styled.div`
   width: 100%;
@@ -134,15 +137,15 @@ type ObjectIndexType = {
   [key: string]: number | undefined;
 };
 
-const TodoList: React.FC<IProps> = ({ todos }) => {
+const TodoList: React.FC<IProps> = () => {
+  const todos = useSelector((state: RootState) => state.todo.todos);
   const router = useRouter();
-
-  const [localTodos, setLocalTodos] = useState(todos);
+  const dispatch = useDispatch();
 
   const todoColorNums = useMemo(() => {
     const colors: ObjectIndexType = {};
 
-    localTodos.forEach((todo) => {
+    todos.forEach((todo) => {
       const value = colors[todo.color];
       if (!value) {
         colors[todo.color] = 1;
@@ -157,14 +160,14 @@ const TodoList: React.FC<IProps> = ({ todos }) => {
     try {
       await checkTodoAPI(id);
 
-      const newTodos = localTodos.map((todo) => {
+      const newTodos = todos.map((todo) => {
         if (todo.id === id) {
           return { ...todo, checked: !todo.checked };
         }
         return todo;
       });
 
-      setLocalTodos(newTodos);
+      dispatch(todoActions.setTodo(newTodos));
     } catch (error) {
       console.log(error);
     }
@@ -173,9 +176,8 @@ const TodoList: React.FC<IProps> = ({ todos }) => {
   const deleteTodo = async (id: number) => {
     try {
       await deleteTodoAPI(id);
-      const newTodos = localTodos.filter((todo) => todo.id !== id);
-      setLocalTodos(newTodos);
-      console.log("삭제완료!");
+      const newTodos = todos.filter((todo) => todo.id !== id);
+      dispatch(todoActions.setTodo(newTodos));
     } catch (error) {
       console.log(error);
     }
@@ -197,7 +199,7 @@ const TodoList: React.FC<IProps> = ({ todos }) => {
         </div>
       </div>
       <ul className="todo-list">
-        {localTodos.map((todo) => (
+        {todos.map((todo) => (
           <li className="todo-item" key={todo.id}>
             <div className="todo-left-side">
               <div className={`todo-color-block bg-${todo.color}`} />
